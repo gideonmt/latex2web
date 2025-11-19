@@ -39,8 +39,8 @@ latex2web document.tex --theme dark
 
 ## Themes
 
-**clean-serif** - default, looks like medium
-**dark** - dark mode
+* **clean-serif** - default, looks like medium
+* **dark** - dark mode
 
 ## test
 
