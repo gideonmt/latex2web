@@ -1,4 +1,5 @@
 # latex2web
+[![Rust](https://github.com/gideonmt/latex2web/actions/workflows/rust.yml/badge.svg)](https://github.com/gideonmt/latex2web/actions/workflows/rust.yml)
 
 Turns LaTeX documents into good looking HTML pages.
 Work in progress.
