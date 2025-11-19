@@ -91,6 +91,7 @@ fn xml_to_html(xml_str: &str, theme: &str) -> String {
     <style>
 {}
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <script>
         MathJax = {{
             tex: {{
@@ -111,6 +112,13 @@ fn xml_to_html(xml_str: &str, theme: &str) -> String {
 {}
         </main>
     </article>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
 </body>
 </html>"#,
         title,
@@ -213,6 +221,13 @@ fn process_node(node: &roxmltree::Node) -> String {
             }
             html.push_str("</strong>");
         }
+        "text" if node.attribute("font") == Some("typewriter") => {
+            html.push_str("<code>");
+            for child in node.children() {
+                html.push_str(&process_node(&child));
+            }
+            html.push_str("</code>");
+        }
         "text" => {
             for child in node.children() {
                 html.push_str(&process_node(&child));
@@ -244,10 +259,71 @@ fn process_node(node: &roxmltree::Node) -> String {
             }
             html.push_str("</ol>");
         }
+        "tabular" | "table" => {
+            html.push_str("<div class=\"table-wrapper\"><table>");
+            
+            // process table rows
+            for child in node.children() {
+                if child.has_tag_name("tr") {
+                    html.push_str("<tr>");
+                    for cell in child.children() {
+                        if cell.has_tag_name("td") {
+                            html.push_str("<td>");
+                            for cell_child in cell.children() {
+                                html.push_str(&process_node(&cell_child));
+                            }
+                            html.push_str("</td>");
+                        } else if cell.has_tag_name("th") {
+                            html.push_str("<th>");
+                            for cell_child in cell.children() {
+                                html.push_str(&process_node(&cell_child));
+                            }
+                            html.push_str("</th>");
+                        }
+                    }
+                    html.push_str("</tr>");
+                }
+            }
+            
+            html.push_str("</table></div>");
+        }
+        "graphics" | "figure" => {
+            // handle images
+            if let Some(src) = node.attribute("graphic") {
+                let caption = node.children()
+                    .find(|c| c.has_tag_name("caption"))
+                    .map(|c| get_all_text(&c))
+                    .unwrap_or_default();
+                
+                html.push_str("<figure>");
+                html.push_str(&format!("<img src=\"{}\" alt=\"{}\">", src, caption));
+                if !caption.is_empty() {
+                    html.push_str(&format!("<figcaption>{}</figcaption>", caption));
+                }
+                html.push_str("</figure>");
+            } else {
+                // process children if no graphic attribute
+                for child in node.children() {
+                    html.push_str(&process_node(&child));
+                }
+            }
+        }
+        "verbatim" | "lstlisting" => {
+            // code blocks
+            let code_content = get_all_text(node);
+            let language = node.attribute("language").unwrap_or("");
+            
+            html.push_str(&format!("<pre><code class=\"language-{}\">{}</code></pre>", 
+                language, 
+                html_escape(&code_content)
+            ));
+        }
         "Math" | "math" => {
             let math_content = get_all_text(node);
             if node.attribute("mode") == Some("display") {
+                html.push_str("<div class=\"math-display\">");
                 html.push_str(&format!("\\[{}\\]", math_content));
+                html.push_str("</div>");
             } else {
                 html.push_str(&format!("\\({}\\)", math_content));
             }
@@ -264,6 +340,14 @@ fn process_node(node: &roxmltree::Node) -> String {
     }
 
     html
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#39;")
 }
 
 fn get_section_depth(node: &roxmltree::Node) -> usize {

@@ -1,5 +1,8 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{listings}
 
 \title{Introduction to Quantum Computing}
 \author{Jane Researcher}
@@ -18,7 +21,13 @@ This paper explores the basic principles of quantum computing and its potential 
 
 \subsection{Superposition}
 
-A qubit can exist in multiple states simultaneously. This property, called \emph{superposition}, is mathematically represented as a linear combination of basis states.
+A qubit can exist in multiple states simultaneously. This property, called \emph{superposition}, is mathematically represented as:
+
+\[
+|\psi\rangle = \alpha|0\rangle + \beta|1\rangle
+\]
+
+where $\alpha$ and $\beta$ are complex probability amplitudes satisfying $|\alpha|^2 + |\beta|^2 = 1$.
 
 Key properties include:
 
@@ -30,7 +39,53 @@ Key properties include:
 
 \subsection{Entanglement}
 
-When qubits become entangled, the state of one qubit instantly affects the state of another, regardless of distance.
+When qubits become entangled, the state of one qubit instantly affects the state of another, regardless of distance. A maximally entangled Bell state is:
+
+\[
+|\Phi^+\rangle = \frac{1}{\sqrt{2}}(|00\rangle + |11\rangle)
+\]
+
+\section{Quantum Gates}
+
+Common quantum gates and their matrix representations:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+Gate & Symbol & Matrix \\
+\hline
+Pauli-X & X & $\begin{pmatrix} 0 & 1 \\ 1 & 0 \end{pmatrix}$ \\
+Pauli-Y & Y & $\begin{pmatrix} 0 & -i \\ i & 0 \end{pmatrix}$ \\
+Pauli-Z & Z & $\begin{pmatrix} 1 & 0 \\ 0 & -1 \end{pmatrix}$ \\
+Hadamard & H & $\frac{1}{\sqrt{2}}\begin{pmatrix} 1 & 1 \\ 1 & -1 \end{pmatrix}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Example: Quantum Teleportation}
+
+Here's a simple quantum circuit in pseudocode:
+
+\begin{verbatim}
+def quantum_teleportation(psi):
+    # Create Bell pair
+    bell_pair = create_bell_state()
+    
+    # Alice's operations
+    cx(psi, bell_pair[0])
+    h(psi)
+    
+    # Measure
+    m1 = measure(psi)
+    m2 = measure(bell_pair[0])
+    
+    # Bob's correction
+    if m2: x(bell_pair[1])
+    if m1: z(bell_pair[1])
+    
+    return bell_pair[1]
+\end{verbatim}
 
 \section{Applications}
 
